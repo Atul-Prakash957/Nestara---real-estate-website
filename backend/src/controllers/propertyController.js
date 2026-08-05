@@ -104,10 +104,25 @@ async function listProperties(req, res) {
     if (max_price) { conditions.push(`p.price <= $${i++}`); params.push(max_price); }
     if (bedrooms) { conditions.push(`p.bedrooms = $${i++}`); params.push(bedrooms); }
     if (furnishing) { conditions.push(`p.furnishing = $${i++}`); params.push(furnishing); }
-    if (q) {
-      conditions.push(`(p.title ILIKE $${i} OR p.description ILIKE $${i} OR l.city ILIKE $${i} OR l.locality ILIKE $${i})`);
-      params.push(`%${q}%`);
-      i++;
+    if (q && String(q).trim()) {
+      const searchTerm = String(q).trim();
+      const patternIndex = i++;
+      const fuzzyIndex = i++;
+
+      // ILIKE handles letter case. PostgreSQL's pg_trgm (%) operator also
+      // returns close spellings, e.g. "Hyderbad" for "Hyderabad".
+      conditions.push(`(
+        p.title ILIKE $${patternIndex}
+        OR p.description ILIKE $${patternIndex}
+        OR l.city ILIKE $${patternIndex}
+        OR l.locality ILIKE $${patternIndex}
+        OR (char_length($${fuzzyIndex}) >= 3 AND (
+          l.city % $${fuzzyIndex}
+          OR l.locality % $${fuzzyIndex}
+          OR p.title % $${fuzzyIndex}
+        ))
+      )`);
+      params.push(`%${searchTerm}%`, searchTerm);
     }
 
     const sortMap = {

@@ -5,6 +5,8 @@
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- Enables typo-tolerant property search (for example, "Hyderbad").
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- ------------------------------------------------------------
 -- USERS
@@ -51,6 +53,8 @@ CREATE TABLE IF NOT EXISTS locations (
     longitude   DOUBLE PRECISION,
     UNIQUE (city, locality)
 );
+CREATE INDEX IF NOT EXISTS idx_locations_city_trgm ON locations USING GIN (city gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_locations_locality_trgm ON locations USING GIN (locality gin_trgm_ops);
 
 -- ------------------------------------------------------------
 -- PROPERTY TYPES (Bungalow, Apartment, 1BHK, 2BHK, Villa, Plot...)
@@ -121,6 +125,7 @@ CREATE INDEX IF NOT EXISTS idx_properties_location ON properties(location_id);
 CREATE INDEX IF NOT EXISTS idx_properties_status ON properties(status);
 CREATE INDEX IF NOT EXISTS idx_properties_price ON properties(price);
 CREATE INDEX IF NOT EXISTS idx_properties_bedrooms ON properties(bedrooms);
+CREATE INDEX IF NOT EXISTS idx_properties_title_trgm ON properties USING GIN (title gin_trgm_ops);
 
 -- ------------------------------------------------------------
 -- PROPERTY IMAGES (multiple images per property)

@@ -22,12 +22,13 @@ export default function SearchDock() {
   function handleSearch(e) {
     e.preventDefault();
     const params = new URLSearchParams();
+    const searchQuery = query.trim();
     params.set('listing_type', tab === 'commercial' ? 'buy' : tab);
-    if (query) params.set('q', query);
+    if (searchQuery) params.set('q', searchQuery);
     if (type) params.set('type', type);
 
-    if (user && query) {
-      userApi.saveSearch({ searchQuery: query, filters: { tab, type } }).catch(() => {});
+    if (user && searchQuery) {
+      userApi.saveSearch({ searchQuery, filters: { tab, type } }).catch(() => {});
     }
     navigate(`/search?${params.toString()}`);
   }
