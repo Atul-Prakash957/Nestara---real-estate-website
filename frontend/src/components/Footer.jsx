@@ -47,7 +47,6 @@ export default function Footer() {
             <FooterLink to="/contact" label="Contact Us" />
             <FooterLink to="/post-property" label="Post Property Free" />
             <FooterLink to="/terms" label="Terms & Conditions" />
-            <FooterLink to="/privacy" label="Privacy Policy" />
           </FooterColumn>
         </div>
 

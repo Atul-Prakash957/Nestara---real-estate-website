@@ -15,6 +15,9 @@ import PostProperty from './pages/PostProperty';
 import Profile from './pages/Profile';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminSetup from './pages/AdminSetup';
+import About from './pages/About';
+import Contact from './pages/Contact';
+import Terms from './pages/Terms';
 
 export default function App() {
   return (
@@ -37,6 +40,11 @@ export default function App() {
 
           <Route path="/admin" element={<RequireAdmin><AdminDashboard /></RequireAdmin>} />
           <Route path="/admin-setup" element={<AdminSetup />} />
+
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/terms" element={<Terms />} />
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
