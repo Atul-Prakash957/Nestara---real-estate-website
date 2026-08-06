@@ -1,4 +1,5 @@
 const { query } = require('../config/db');
+const { sendLeadNotificationEmail } = require('../utils/mailer');
 
 // ---------------- SHORTLIST ----------------
 
@@ -107,15 +108,60 @@ async function sendLead(req, res) {
     const { name, phone, email, message } = req.body;
     if (!phone) return res.status(400).json({ success: false, message: 'phone is required to contact owner' });
 
+    const propResult = await query(
+      `SELECT p.title, p.owner_id, u.email AS owner_email
+       FROM properties p JOIN users u ON u.id = p.owner_id
+       WHERE p.id = $1`,
+      [propertyId]
+    );
+    if (propResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Property not found' });
+    }
+    const { title, owner_id, owner_email } = propResult.rows[0];
+
+    if (req.user && req.user.id === owner_id) {
+      return res.status(400).json({ success: false, message: 'You cannot send an enquiry on your own listing' });
+    }
+
     await query(
       `INSERT INTO property_leads (property_id, user_id, name, phone, email, message)
        VALUES ($1, $2, $3, $4, $5, $6)`,
       [propertyId, req.user ? req.user.id : null, name || null, phone, email || null, message || null]
     );
 
+    // Notify the property owner by email — fire and forget so a slow/broken
+    // SMTP connection never delays or fails the enquiry submission itself.
+    if (owner_email) {
+      sendLeadNotificationEmail(owner_email, {
+        propertyTitle: title,
+        propertyId,
+        leadName: name,
+        leadPhone: phone,
+        leadEmail: email,
+        message,
+      }).catch((err) => console.error('Failed to send lead notification email:', err.message));
+    }
+
     return res.json({ success: true, message: 'Your interest has been sent to the owner/agent' });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Failed to send enquiry', error: err.message });
+  }
+}
+
+// GET /api/properties/my-leads - enquiries received on properties I own
+async function getMyLeads(req, res) {
+  try {
+    const result = await query(
+      `SELECT pl.*, p.title AS property_title
+       FROM property_leads pl
+       JOIN properties p ON p.id = pl.property_id
+       WHERE p.owner_id = $1
+       ORDER BY pl.created_at DESC`,
+      [req.user.id]
+    );
+    return res.json({ success: true, leads: result.rows });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Failed to fetch enquiries', error: err.message });
   }
 }
 
@@ -127,4 +173,5 @@ module.exports = {
   saveRecentSearch,
   getRecentSearches,
   sendLead,
+  getMyLeads,
 };

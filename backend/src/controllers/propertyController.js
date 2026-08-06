@@ -104,25 +104,10 @@ async function listProperties(req, res) {
     if (max_price) { conditions.push(`p.price <= $${i++}`); params.push(max_price); }
     if (bedrooms) { conditions.push(`p.bedrooms = $${i++}`); params.push(bedrooms); }
     if (furnishing) { conditions.push(`p.furnishing = $${i++}`); params.push(furnishing); }
-    if (q && String(q).trim()) {
-      const searchTerm = String(q).trim();
-      const patternIndex = i++;
-      const fuzzyIndex = i++;
-
-      // ILIKE handles letter case. PostgreSQL's pg_trgm (%) operator also
-      // returns close spellings, e.g. "Hyderbad" for "Hyderabad".
-      conditions.push(`(
-        p.title ILIKE $${patternIndex}
-        OR p.description ILIKE $${patternIndex}
-        OR l.city ILIKE $${patternIndex}
-        OR l.locality ILIKE $${patternIndex}
-        OR (char_length($${fuzzyIndex}) >= 3 AND (
-          l.city % $${fuzzyIndex}
-          OR l.locality % $${fuzzyIndex}
-          OR p.title % $${fuzzyIndex}
-        ))
-      )`);
-      params.push(`%${searchTerm}%`, searchTerm);
+    if (q) {
+      conditions.push(`(p.title ILIKE $${i} OR p.description ILIKE $${i} OR l.city ILIKE $${i} OR l.locality ILIKE $${i})`);
+      params.push(`%${q}%`);
+      i++;
     }
 
     const sortMap = {
@@ -271,6 +256,42 @@ async function updateProperty(req, res) {
 }
 
 // ------------------------------------------------------------
+// UPDATE own property status - PATCH /api/properties/:id/status
+// Lets an owner (or admin) mark their own approved listing as sold/rented,
+// or reactivate it back to "approved" if it comes back on the market.
+// This is separate from the admin-only approve/reject workflow — owners
+// can only move between approved <-> sold/rented, never touch pending/rejected.
+// ------------------------------------------------------------
+async function updateOwnPropertyStatus(req, res) {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const allowedStatuses = ['approved', 'sold', 'rented'];
+
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({ success: false, message: `status must be one of ${allowedStatuses.join(', ')}` });
+    }
+
+    const check = await query('SELECT owner_id, status FROM properties WHERE id = $1', [id]);
+    if (check.rows.length === 0) return res.status(404).json({ success: false, message: 'Property not found' });
+
+    if (check.rows[0].owner_id !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Not authorized to update this property' });
+    }
+
+    if (check.rows[0].status === 'pending' || check.rows[0].status === 'rejected') {
+      return res.status(400).json({ success: false, message: 'This listing is still awaiting admin approval and cannot be marked sold/rented yet' });
+    }
+
+    const result = await query('UPDATE properties SET status = $1 WHERE id = $2 RETURNING *', [status, id]);
+    return res.json({ success: true, message: `Property marked as ${status}`, property: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, message: 'Failed to update property status', error: err.message });
+  }
+}
+
+// ------------------------------------------------------------
 // DELETE property (owner or admin) - DELETE /api/properties/:id
 // ------------------------------------------------------------
 async function deleteProperty(req, res) {
@@ -345,6 +366,7 @@ module.exports = {
   listProperties,
   getPropertyById,
   updateProperty,
+  updateOwnPropertyStatus,
   deleteProperty,
   getMyListings,
   getFeaturedProjects,

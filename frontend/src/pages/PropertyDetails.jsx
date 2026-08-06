@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import {
   MapPin, BedDouble, Bath, Ruler, Compass, Building2, Calendar,
   Car, Phone, Mail, Heart, ChevronLeft, ChevronRight, Loader2, CheckCircle2,
 } from 'lucide-react';
 import { propertyApi, userApi } from '../api/services';
 import { useAuth } from '../context/AuthContext';
+import { getImageUrl } from '../utils/media';
 
 function formatPrice(price) {
   const n = Number(price);
@@ -44,7 +45,7 @@ export default function PropertyDetails() {
   if (loading) return <div className="mx-auto max-w-6xl px-4 py-20 text-center text-muted"><Loader2 className="mx-auto mb-2 animate-spin" /> Loading property…</div>;
   if (!property) return <div className="mx-auto max-w-6xl px-4 py-20 text-center text-muted">Property not found.</div>;
 
-  const images = property.images?.length ? property.images.map((i) => i.image_url) : [];
+  const images = property.images?.length ? property.images.map((i) => getImageUrl(i.image_url)) : [];
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 lg:px-8">
@@ -134,7 +135,15 @@ export default function PropertyDetails() {
           <p className="text-xs font-semibold uppercase tracking-wide text-muted">Contact {property.owner_name ? 'Owner' : 'Agent'}</p>
           <p className="mt-1 font-display text-lg font-700 text-ink">{property.contact_name || property.owner_name || 'Property Owner'}</p>
 
-          {leadSent ? (
+          {user && user.id === property.owner_id ? (
+            <div className="mt-4 rounded-lg bg-canvas px-3 py-3 text-sm text-ink/80">
+              This is your own listing — enquiries from interested buyers will show up under{' '}
+              <Link to="/profile?tab=enquiries" className="font-semibold text-coral hover:underline">
+                Profile → Enquiries
+              </Link>{' '}
+              and get emailed to you.
+            </div>
+          ) : leadSent ? (
             <div className="mt-4 flex items-center gap-2 rounded-lg bg-teal-light px-3 py-3 text-sm text-teal-dark">
               <CheckCircle2 size={18} /> Your enquiry has been sent!
             </div>

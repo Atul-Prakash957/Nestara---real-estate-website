@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Heart, ChevronLeft, ChevronRight, BedDouble, Bath, Ruler, MapPin, BadgeCheck, ImageOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { userApi } from '../api/services';
+import { getImageUrl } from '../utils/media';
 
 function formatPrice(price) {
   const n = Number(price);

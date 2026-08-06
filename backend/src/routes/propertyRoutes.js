@@ -12,6 +12,7 @@ router.get('/featured-projects', propertyController.getFeaturedProjects);
 
 // Authenticated user-specific (must come before /:id to avoid route collision)
 router.get('/my-listings', requireAuth, propertyController.getMyListings);
+router.get('/my-leads', requireAuth, userController.getMyLeads);
 router.get('/shortlist', requireAuth, userController.getShortlist);
 router.get('/recently-viewed', requireAuth, userController.getRecentlyViewed);
 router.get('/recent-searches', requireAuth, userController.getRecentSearches);
@@ -25,6 +26,7 @@ router.post('/:propertyId/contact', optionalAuth, userController.sendLead);
 router.post('/', requireAuth, upload.array('images', 10), propertyController.createProperty);
 router.get('/:id', optionalAuth, propertyController.getPropertyById);
 router.put('/:id', requireAuth, propertyController.updateProperty);
+router.patch('/:id/status', requireAuth, propertyController.updateOwnPropertyStatus);
 router.delete('/:id', requireAuth, propertyController.deleteProperty);
 
 module.exports = router;

@@ -8,7 +8,7 @@ export const authApi = {
   login: (data) => api.post('/auth/login', data),
   forgotPassword: (data) => api.post('/auth/forgot-password', data),
   resetPassword: (data) => api.post('/auth/reset-password', data),
-   me: () => api.get('/auth/me'),
+  me: () => api.get('/auth/me'),
   bootstrapAdmin: (data) => api.post('/auth/bootstrap-admin', data),
 };
 
@@ -21,6 +21,7 @@ export const propertyApi = {
   update: (id, data) => api.put(`/properties/${id}`, data),
   remove: (id) => api.delete(`/properties/${id}`),
   myListings: () => api.get('/properties/my-listings'),
+  updateOwnStatus: (id, status) => api.patch(`/properties/${id}/status`, { status }),
   propertyTypes: () => api.get('/properties/property-types'),
   featuredProjects: () => api.get('/properties/featured-projects'),
 };
@@ -34,6 +35,7 @@ export const userApi = {
   recentSearches: () => api.get('/properties/recent-searches'),
   saveSearch: (data) => api.post('/properties/recent-searches', data),
   contactOwner: (propertyId, data) => api.post(`/properties/${propertyId}/contact`, data),
+  myLeads: () => api.get('/properties/my-leads'),
 };
 
 // ---------------- ADMIN ----------------
