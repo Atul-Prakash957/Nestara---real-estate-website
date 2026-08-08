@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Building2, Home as HomeIcon, Warehouse, LandPlot, Building,
-  ShieldCheck, Wallet, Headset, ArrowRight, MapPin,
+  ShieldCheck, Wallet, Headset, ArrowRight,
 } from 'lucide-react';
 import SearchDock from '../components/SearchDock';
 import PropertyCard from '../components/PropertyCard';
@@ -24,18 +24,12 @@ const TRUST_POINTS = [
 
 export default function Home() {
   const [featured, setFeatured] = useState([]);
-  const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      propertyApi.list({ sort: 'newest', limit: 8 }),
-      propertyApi.featuredProjects(),
-    ])
-      .then(([propsRes, projRes]) => {
-        setFeatured(propsRes.data.properties || []);
-        setProjects(projRes.data.projects || []);
-      })
+    propertyApi
+      .list({ sort: 'newest', limit: 8 })
+      .then((res) => setFeatured(res.data.properties || []))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -92,14 +86,14 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FEATURED PROPERTIES */}
+      {/* RECENTLY ADDED PROPERTIES */}
       <section className="mx-auto max-w-7xl px-4 py-16 lg:px-8">
         <div className="mb-6 flex items-end justify-between">
           <div>
-            <h2 className="text-2xl font-700 text-ink sm:text-3xl">Handpicked for you</h2>
+            <h2 className="text-2xl font-700 text-ink sm:text-3xl">Recently added</h2>
             <p className="mt-1 text-sm text-muted">Fresh listings our team has verified this week</p>
           </div>
-          <Link to="/search" className="hidden items-center gap-1 text-sm font-semibold text-coral hover:text-coral-dark sm:flex">
+          <Link to="/search?sort=newest" className="hidden items-center gap-1 text-sm font-semibold text-coral hover:text-coral-dark sm:flex">
             View all <ArrowRight size={15} />
           </Link>
         </div>
@@ -116,41 +110,6 @@ export default function Home() {
           </div>
         )}
       </section>
-
-      {/* FEATURED PROJECTS */}
-      {projects.length > 0 && (
-        <section className="bg-surface py-16">
-          <div className="mx-auto max-w-7xl px-4 lg:px-8">
-            <h2 className="text-2xl font-700 text-ink sm:text-3xl">Featured new projects</h2>
-            <p className="mt-1 text-sm text-muted">Upcoming and ready-to-move projects from trusted builders</p>
-
-            <div className="no-scrollbar mt-6 flex gap-5 overflow-x-auto pb-2">
-              {projects.map((proj) => (
-                <div
-                  key={proj.id}
-                  className="w-72 shrink-0 overflow-hidden rounded-xl2 border border-line shadow-card transition hover:shadow-card-hover"
-                >
-                  <div className="h-40 w-full bg-gradient-to-br from-navy to-navy-light">
-                    {proj.banner_image && (
-                      <img src={proj.banner_image} alt={proj.name} className="h-full w-full object-cover" loading="lazy" />
-                    )}
-                  </div>
-                  <div className="p-4">
-                    <p className="font-display font-700 text-ink">{proj.name}</p>
-                    <p className="text-xs text-muted">{proj.builder_name}</p>
-                    <p className="mt-2 flex items-center gap-1 text-xs text-muted">
-                      <MapPin size={12} /> {[proj.locality, proj.city].filter(Boolean).join(', ')}
-                    </p>
-                    {proj.price_range && (
-                      <p className="mt-2 text-sm font-semibold text-coral">{proj.price_range}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* TRUST / WHY US */}
       <section className="mx-auto max-w-7xl px-4 py-16 lg:px-8">

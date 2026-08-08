@@ -14,6 +14,7 @@ async function createProperty(req, res) {
       area_sqft, bedrooms, bathrooms, balconies, floor_number, total_floors,
       furnishing, facing, age_of_property, parking, amenities,
       contact_name, contact_phone, contact_email,
+      sharing_type, gender_preference, meals_included, price_per_bed,
     } = req.body;
 
     if (!title || !listing_type || !property_type_id || !price) {
@@ -43,9 +44,10 @@ async function createProperty(req, res) {
         address, latitude, longitude, price, monthly_rent, security_deposit,
         area_sqft, bedrooms, bathrooms, balconies, floor_number, total_floors,
         furnishing, facing, age_of_property, parking, amenities,
-        contact_name, contact_phone, contact_email
+        contact_name, contact_phone, contact_email,
+        sharing_type, gender_preference, meals_included, price_per_bed
       ) VALUES (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30
       ) RETURNING *`,
       [
         req.user.id, title, description, listing_type, property_type_id, locationId,
@@ -53,6 +55,7 @@ async function createProperty(req, res) {
         area_sqft || null, bedrooms || null, bathrooms || null, balconies || null, floor_number || null, total_floors || null,
         furnishing || null, facing || null, age_of_property || null, parking || 0, amenitiesArray,
         contact_name || null, contact_phone || null, contact_email || null,
+        sharing_type || null, gender_preference || null, meals_included === 'true' || meals_included === true, price_per_bed || null,
       ]
     );
 
@@ -90,6 +93,7 @@ async function listProperties(req, res) {
     const {
       listing_type, city, locality, property_type_id, min_price, max_price,
       bedrooms, furnishing, q, page = 1, limit = 12, sort = 'newest',
+      pg, gender_preference, sharing_type,
     } = req.query;
 
     const conditions = [`p.status = 'approved'`];
@@ -97,13 +101,19 @@ async function listProperties(req, res) {
     let i = 1;
 
     if (listing_type) { conditions.push(`p.listing_type = $${i++}`); params.push(listing_type); }
-    if (city) { conditions.push(`l.city ILIKE $${i++}`); params.push(city); }
+    if (city) { conditions.push(`l.city ILIKE $${i++}`); params.push(`%${city}%`); }
     if (locality) { conditions.push(`l.locality ILIKE $${i++}`); params.push(`%${locality}%`); }
     if (property_type_id) { conditions.push(`p.property_type_id = $${i++}`); params.push(property_type_id); }
     if (min_price) { conditions.push(`p.price >= $${i++}`); params.push(min_price); }
     if (max_price) { conditions.push(`p.price <= $${i++}`); params.push(max_price); }
     if (bedrooms) { conditions.push(`p.bedrooms = $${i++}`); params.push(bedrooms); }
     if (furnishing) { conditions.push(`p.furnishing = $${i++}`); params.push(furnishing); }
+    // "PG/Hostel" tab in the header links here with ?pg=true — matches the
+    // seeded/admin-created 'PG / Hostel' property type by name so we don't
+    // need to know its numeric id on the frontend.
+    if (pg === 'true') { conditions.push(`pt.name ILIKE 'PG%'`); }
+    if (gender_preference) { conditions.push(`p.gender_preference = $${i++}`); params.push(gender_preference); }
+    if (sharing_type) { conditions.push(`p.sharing_type = $${i++}`); params.push(sharing_type); }
     if (q) {
       conditions.push(`(p.title ILIKE $${i} OR p.description ILIKE $${i} OR l.city ILIKE $${i} OR l.locality ILIKE $${i})`);
       params.push(`%${q}%`);
@@ -226,6 +236,7 @@ async function updateProperty(req, res) {
       'bathrooms', 'balconies', 'floor_number', 'total_floors', 'furnishing',
       'facing', 'age_of_property', 'parking', 'amenities', 'contact_name',
       'contact_phone', 'contact_email', 'address',
+      'sharing_type', 'gender_preference', 'meals_included', 'price_per_bed',
     ];
 
     const updates = [];

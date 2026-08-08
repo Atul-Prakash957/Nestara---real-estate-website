@@ -13,6 +13,7 @@ const initialForm = {
   area_sqft: '', bedrooms: '', bathrooms: '', balconies: '', floor_number: '', total_floors: '',
   furnishing: 'unfurnished', facing: '', age_of_property: '', parking: 0, amenities: [],
   contact_name: '', contact_phone: '', contact_email: '',
+  sharing_type: '', gender_preference: '', meals_included: false, price_per_bed: '',
 };
 
 export default function PostProperty() {
@@ -39,6 +40,8 @@ export default function PostProperty() {
       amenities: f.amenities.includes(a) ? f.amenities.filter((x) => x !== a) : [...f.amenities, a],
     }));
   }
+
+  const isPg = types.find((t) => String(t.id) === String(form.property_type_id))?.name === 'PG / Hostel';
 
   function handleImageSelect(e) {
     const files = Array.from(e.target.files).slice(0, 10 - images.length);
@@ -136,9 +139,13 @@ export default function PostProperty() {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
               <Input label="Area (sqft)" type="number" value={form.area_sqft} onChange={(v) => set('area_sqft', v)} />
-              <Input label="Bedrooms" type="number" value={form.bedrooms} onChange={(v) => set('bedrooms', v)} />
+              {!isPg && (
+                <>
+                  <Input label="Bedrooms" type="number" value={form.bedrooms} onChange={(v) => set('bedrooms', v)} />
+                  <Input label="Balconies" type="number" value={form.balconies} onChange={(v) => set('balconies', v)} />
+                </>
+              )}
               <Input label="Bathrooms" type="number" value={form.bathrooms} onChange={(v) => set('bathrooms', v)} />
-              <Input label="Balconies" type="number" value={form.balconies} onChange={(v) => set('balconies', v)} />
               <Input label="Floor No." type="number" value={form.floor_number} onChange={(v) => set('floor_number', v)} />
               <Input label="Total Floors" type="number" value={form.total_floors} onChange={(v) => set('total_floors', v)} />
             </div>
@@ -160,6 +167,31 @@ export default function PostProperty() {
                 ))}
               </div>
             </div>
+
+            {isPg && (
+              <div className="rounded-lg border border-teal-light bg-teal-light/40 p-4">
+                <p className="mb-3 text-sm font-semibold text-teal-dark">PG / Hostel Details</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <Select label="Sharing Type" value={form.sharing_type} onChange={(v) => set('sharing_type', v)} options={[
+                    { value: 'single', label: 'Single Sharing' },
+                    { value: 'double', label: 'Double Sharing' },
+                    { value: 'triple', label: 'Triple Sharing' },
+                  ]} placeholder="Select sharing type" />
+                  <Select label="Gender Preference" value={form.gender_preference} onChange={(v) => set('gender_preference', v)} options={[
+                    { value: 'boys', label: 'Boys Only' },
+                    { value: 'girls', label: 'Girls Only' },
+                    { value: 'co-ed', label: 'Co-ed' },
+                  ]} placeholder="Select preference" />
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-4">
+                  <Input label="Price per Bed (₹/month)" type="number" value={form.price_per_bed} onChange={(v) => set('price_per_bed', v)} placeholder="e.g. 8000" />
+                  <label className="flex items-center gap-2 pt-6">
+                    <input type="checkbox" checked={form.meals_included} onChange={(e) => set('meals_included', e.target.checked)} className="h-4 w-4 rounded border-line" />
+                    <span className="text-sm text-ink">Meals included</span>
+                  </label>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

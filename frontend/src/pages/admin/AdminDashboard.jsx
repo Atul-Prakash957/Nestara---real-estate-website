@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import {
   LayoutDashboard, Building2, Users, Inbox, CheckCircle2, XCircle,
-  Star, StarOff, Loader2, Ban, ShieldCheck, Landmark, Plus, Pencil, Trash2, X, Eye, EyeOff,
+  Star, StarOff, Loader2, Ban, ShieldCheck,
 } from 'lucide-react';
 import { adminApi } from '../../api/services';
 
 const TABS = [
   { key: 'overview', label: 'Overview', icon: LayoutDashboard },
   { key: 'properties', label: 'Properties', icon: Building2 },
-  { key: 'projects', label: 'Featured Projects', icon: Landmark },
   { key: 'users', label: 'Users', icon: Users },
 ];
 
@@ -37,7 +36,6 @@ export default function AdminDashboard() {
       <div className="mt-6">
         {tab === 'overview' && <Overview />}
         {tab === 'properties' && <PropertiesTab />}
-        {tab === 'projects' && <ProjectsTab />}
         {tab === 'users' && <UsersTab />}
       </div>
     </div>
@@ -177,168 +175,6 @@ function PropertiesTab() {
         </div>
       )}
     </div>
-  );
-}
-
-const emptyProjectForm = { name: '', builder_name: '', city: '', locality: '', price_range: '', banner_image: '', possession_date: '' };
-
-function ProjectsTab() {
-  const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [formOpen, setFormOpen] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [form, setForm] = useState(emptyProjectForm);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-
-  function load() {
-    setLoading(true);
-    adminApi.featuredProjectsAdmin().then((res) => setProjects(res.data.projects || [])).finally(() => setLoading(false));
-  }
-  useEffect(load, []);
-
-  function openAddForm() {
-    setEditingId(null);
-    setForm(emptyProjectForm);
-    setError('');
-    setFormOpen(true);
-  }
-
-  function openEditForm(p) {
-    setEditingId(p.id);
-    setForm({
-      name: p.name || '', builder_name: p.builder_name || '', city: p.city || '',
-      locality: p.locality || '', price_range: p.price_range || '',
-      banner_image: p.banner_image || '', possession_date: p.possession_date || '',
-    });
-    setError('');
-    setFormOpen(true);
-  }
-
-  function set(field, value) {
-    setForm((f) => ({ ...f, [field]: value }));
-  }
-
-  async function handleSave(e) {
-    e.preventDefault();
-    if (!form.name.trim()) {
-      setError('Project name is required');
-      return;
-    }
-    setSaving(true);
-    setError('');
-    try {
-      if (editingId) {
-        await adminApi.updateFeaturedProject(editingId, form);
-      } else {
-        await adminApi.createFeaturedProject(form);
-      }
-      setFormOpen(false);
-      load();
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save project');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleDelete(id) {
-    if (!window.confirm('Delete this featured project? This cannot be undone.')) return;
-    await adminApi.deleteFeaturedProject(id);
-    load();
-  }
-
-  async function handleToggleActive(id) {
-    await adminApi.toggleFeaturedProjectActive(id);
-    load();
-  }
-
-  return (
-    <div>
-      <div className="mb-4 flex items-center justify-between">
-        <p className="text-sm text-muted">Projects shown here appear in the "Featured new projects" carousel on the home page when active.</p>
-        <button
-          onClick={openAddForm}
-          className="flex shrink-0 items-center gap-1.5 rounded-lg bg-coral px-4 py-2 text-sm font-semibold text-white hover:bg-coral-dark"
-        >
-          <Plus size={16} /> Add Project
-        </button>
-      </div>
-
-      {formOpen && (
-        <div className="mb-6 rounded-xl2 border border-line bg-surface p-5 shadow-card">
-          <div className="mb-4 flex items-center justify-between">
-            <p className="font-display text-lg font-700 text-ink">{editingId ? 'Edit Project' : 'New Featured Project'}</p>
-            <button onClick={() => setFormOpen(false)} className="text-muted hover:text-ink"><X size={18} /></button>
-          </div>
-          <form onSubmit={handleSave} className="grid gap-4 sm:grid-cols-2">
-            <ProjectField label="Project Name" value={form.name} onChange={(v) => set('name', v)} placeholder="Prestige Lakeside Habitat" required />
-            <ProjectField label="Builder Name" value={form.builder_name} onChange={(v) => set('builder_name', v)} placeholder="Prestige Group" />
-            <ProjectField label="City" value={form.city} onChange={(v) => set('city', v)} placeholder="Bengaluru" />
-            <ProjectField label="Locality" value={form.locality} onChange={(v) => set('locality', v)} placeholder="Whitefield" />
-            <ProjectField label="Price Range" value={form.price_range} onChange={(v) => set('price_range', v)} placeholder="80L - 1.2Cr" />
-            <ProjectField label="Possession Date" value={form.possession_date} onChange={(v) => set('possession_date', v)} placeholder="Dec 2027" />
-            <div className="sm:col-span-2">
-              <ProjectField label="Banner Image URL" value={form.banner_image} onChange={(v) => set('banner_image', v)} placeholder="https://..." />
-            </div>
-
-            {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 sm:col-span-2">{error}</p>}
-
-            <div className="flex gap-2 sm:col-span-2">
-              <button type="submit" disabled={saving} className="flex items-center gap-2 rounded-lg bg-navy px-5 py-2 text-sm font-semibold text-white hover:bg-navy-light disabled:opacity-60">
-                {saving && <Loader2 size={15} className="animate-spin" />}
-                {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Create Project'}
-              </button>
-              <button type="button" onClick={() => setFormOpen(false)} className="rounded-lg border border-line px-5 py-2 text-sm font-medium text-muted hover:bg-canvas">
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {loading ? <Loading /> : projects.length === 0 ? (
-        <EmptyRow text="No featured projects yet. Add one to show it on the home page." />
-      ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {projects.map((p) => (
-            <div key={p.id} className="overflow-hidden rounded-xl2 border border-line bg-surface shadow-card">
-              <div className="h-32 w-full bg-gradient-to-br from-navy to-navy-light">
-                {p.banner_image && <img src={p.banner_image} alt={p.name} className="h-full w-full object-cover" />}
-              </div>
-              <div className="p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="font-display font-700 text-ink">{p.name}</p>
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${p.is_active ? 'bg-teal-light text-teal-dark' : 'bg-gray-100 text-gray-500'}`}>
-                    {p.is_active ? 'Live' : 'Hidden'}
-                  </span>
-                </div>
-                <p className="text-xs text-muted">{p.builder_name}</p>
-                <p className="mt-1 text-xs text-muted">{[p.locality, p.city].filter(Boolean).join(', ') || 'No location set'}</p>
-                {p.price_range && <p className="mt-2 text-sm font-semibold text-coral">{p.price_range}</p>}
-
-                <div className="mt-3 flex justify-end gap-2 border-t border-line pt-3">
-                  <IconBtn onClick={() => handleToggleActive(p.id)} title={p.is_active ? 'Hide from home page' : 'Show on home page'}>
-                    {p.is_active ? <EyeOff size={15} className="text-muted" /> : <Eye size={15} className="text-teal" />}
-                  </IconBtn>
-                  <IconBtn onClick={() => openEditForm(p)} title="Edit"><Pencil size={15} className="text-navy" /></IconBtn>
-                  <IconBtn onClick={() => handleDelete(p.id)} title="Delete"><Trash2 size={15} className="text-red-500" /></IconBtn>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ProjectField({ label, ...props }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-medium text-ink">{label}</span>
-      <input {...props} onChange={(e) => props.onChange(e.target.value)} className="w-full rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-coral" />
-    </label>
   );
 }
 

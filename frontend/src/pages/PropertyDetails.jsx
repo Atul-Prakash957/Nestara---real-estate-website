@@ -91,7 +91,9 @@ export default function PropertyDetails() {
                 <MapPin size={14} /> {[property.address, property.locality, property.city].filter(Boolean).join(', ')}
               </p>
             </div>
-            <p className="font-display text-3xl font-800 text-coral">{formatPrice(property.price)}</p>
+            <p className="font-display text-3xl font-800 text-coral">
+              {property.price_per_bed ? `${formatPrice(property.price_per_bed)} /bed /mo` : formatPrice(property.price)}
+            </p>
           </div>
 
           <div className="mt-5 grid grid-cols-2 gap-3 rounded-xl2 border border-line bg-surface p-4 sm:grid-cols-4">
@@ -114,6 +116,9 @@ export default function PropertyDetails() {
             <Detail icon={<Calendar size={16} />} label="Age" value={property.age_of_property} />
             <Detail icon={<Building2 size={16} />} label="Furnishing" value={property.furnishing} />
             <Detail icon={<Building2 size={16} />} label="Floor" value={property.floor_number ? `${property.floor_number} of ${property.total_floors || '-'}` : null} />
+            <Detail icon={<Building2 size={16} />} label="Sharing" value={property.sharing_type ? `${property.sharing_type} sharing` : null} />
+            <Detail icon={<Building2 size={16} />} label="Preference" value={property.gender_preference} />
+            <Detail icon={<CheckCircle2 size={16} />} label="Meals" value={property.meals_included ? 'Included' : null} />
           </section>
 
           {property.amenities?.length > 0 && (

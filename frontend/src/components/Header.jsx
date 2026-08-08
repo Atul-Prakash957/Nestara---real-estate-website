@@ -10,7 +10,8 @@ import { useLocation as useCityLocation } from '../hooks/useLocation';
 const NAV_LINKS = [
   { label: 'Buy', to: '/search?listing_type=buy' },
   { label: 'Rent', to: '/search?listing_type=rent' },
-  { label: 'New Projects', to: '/projects' },
+  { label: 'PG/Hostel', to: '/search?pg=true' },
+  { label: 'Recently Added', to: '/search?sort=newest' },
 ];
 
 export default function Header() {

@@ -20,9 +20,9 @@ export default function PropertyCard({ property, onShortlistChange }) {
   const [saving, setSaving] = useState(false);
 
   const images = property.images?.length
-    ? property.images.map((i) => i.image_url)
+    ? property.images.map((i) => getImageUrl(i.image_url))
     : property.primary_image
-    ? [property.primary_image]
+    ? [getImageUrl(property.primary_image)]
     : [];
 
   function nextImg(e) {
@@ -102,6 +102,12 @@ export default function PropertyCard({ property, onShortlistChange }) {
           </span>
         )}
 
+        {property.price_per_bed && (
+          <span className={`absolute left-2 ${property.is_featured ? 'top-9' : 'top-2'} rounded-md bg-teal px-2 py-0.5 text-[11px] font-semibold text-white shadow`}>
+            PG/Hostel
+          </span>
+        )}
+
         <button
           onClick={toggleShortlist}
           disabled={saving}
@@ -119,7 +125,9 @@ export default function PropertyCard({ property, onShortlistChange }) {
       {/* Body */}
       <div className="p-3.5">
         <div className="flex items-start justify-between gap-2">
-          <p className="font-display text-lg font-700 text-ink">{formatPrice(property.price)}</p>
+          <p className="font-display text-lg font-700 text-ink">
+            {property.price_per_bed ? `${formatPrice(property.price_per_bed)} /bed /mo` : formatPrice(property.price)}
+          </p>
           {property.status === 'approved' && (
             <span className="flex items-center gap-1 text-[11px] font-medium text-teal">
               <BadgeCheck size={13} /> Verified
@@ -137,14 +145,24 @@ export default function PropertyCard({ property, onShortlistChange }) {
         </p>
 
         <div className="mt-3 flex items-center gap-4 border-t border-line pt-3 text-xs text-muted">
-          {property.bedrooms && (
-            <span className="flex items-center gap-1"><BedDouble size={14} /> {property.bedrooms} Beds</span>
-          )}
-          {property.bathrooms && (
-            <span className="flex items-center gap-1"><Bath size={14} /> {property.bathrooms} Baths</span>
-          )}
-          {property.area_sqft && (
-            <span className="flex items-center gap-1"><Ruler size={14} /> {property.area_sqft} sqft</span>
+          {property.price_per_bed ? (
+            <>
+              {property.sharing_type && <span className="capitalize">{property.sharing_type} Sharing</span>}
+              {property.gender_preference && <span className="capitalize">{property.gender_preference}</span>}
+              {property.meals_included && <span>Meals Included</span>}
+            </>
+          ) : (
+            <>
+              {property.bedrooms && (
+                <span className="flex items-center gap-1"><BedDouble size={14} /> {property.bedrooms} Beds</span>
+              )}
+              {property.bathrooms && (
+                <span className="flex items-center gap-1"><Bath size={14} /> {property.bathrooms} Baths</span>
+              )}
+              {property.area_sqft && (
+                <span className="flex items-center gap-1"><Ruler size={14} /> {property.area_sqft} sqft</span>
+              )}
+            </>
           )}
         </div>
       </div>

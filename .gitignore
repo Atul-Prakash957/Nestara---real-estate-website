@@ -10,6 +10,8 @@ frontend/node_modules/
 backend/.env
 frontend/.env
 
+graphify-out/
+
 # Keep example env files
 !backend/.env.example
 !frontend/.env.example
