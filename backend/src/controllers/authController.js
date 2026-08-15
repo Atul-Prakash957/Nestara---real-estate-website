@@ -17,7 +17,6 @@ function sanitizeUser(user) {
   return rest;
 }
 
-// STEP 1: Register - create unverified user + send OTP
 async function register(req, res) {
   try {
     const { name, email, password, phone } = req.body;
@@ -34,7 +33,6 @@ async function register(req, res) {
 
     let user;
     if (existing.rows.length > 0) {
-      // user exists but not verified -> update details, resend OTP
       const updated = await query(
         `UPDATE users SET name=$1, password_hash=$2, phone=$3 WHERE email=$4 RETURNING *`,
         [name, passwordHash, phone || null, email]
@@ -63,7 +61,6 @@ async function register(req, res) {
   }
 }
 
-// STEP 2: Verify OTP -> mark verified, return JWT
 async function verifyRegisterOtp(req, res) {
   try {
     const { email, otp } = req.body;
@@ -95,7 +92,6 @@ async function verifyRegisterOtp(req, res) {
   }
 }
 
-// Resend OTP (register or login or reset)
 async function resendOtp(req, res) {
   try {
     const { email, purpose = 'register' } = req.body;
@@ -111,7 +107,6 @@ async function resendOtp(req, res) {
   }
 }
 
-// LOGIN with password (email must be verified)
 async function login(req, res) {
   try {
     const { email, password } = req.body;
@@ -153,13 +148,11 @@ async function login(req, res) {
   }
 }
 
-// Forgot password: send OTP
 async function forgotPassword(req, res) {
   try {
     const { email } = req.body;
     const result = await query('SELECT id FROM users WHERE email = $1', [email]);
     if (result.rows.length === 0) {
-      // Don't reveal whether email exists
       return res.json({ success: true, message: 'If this email exists, an OTP has been sent.' });
     }
     const otpCode = await createOtp(email, 'reset_password');
@@ -171,7 +164,6 @@ async function forgotPassword(req, res) {
   }
 }
 
-// Reset password using OTP
 async function resetPassword(req, res) {
   try {
     const { email, otp, newPassword } = req.body;
@@ -194,7 +186,6 @@ async function resetPassword(req, res) {
   }
 }
 
-// Get current logged-in user
 async function getMe(req, res) {
   try {
     const result = await query('SELECT * FROM users WHERE id = $1', [req.user.id]);

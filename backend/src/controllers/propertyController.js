@@ -1,8 +1,5 @@
 const { query, pool } = require('../config/db');
 
-// ------------------------------------------------------------
-// CREATE property (with images) - POST /api/properties
-// ------------------------------------------------------------
 async function createProperty(req, res) {
   const client = await pool.connect();
   try {
@@ -14,14 +11,12 @@ async function createProperty(req, res) {
       area_sqft, bedrooms, bathrooms, balconies, floor_number, total_floors,
       furnishing, facing, age_of_property, parking, amenities,
       contact_name, contact_phone, contact_email,
-      sharing_type, gender_preference, meals_included, price_per_bed,
     } = req.body;
 
     if (!title || !listing_type || !property_type_id || !price) {
       return res.status(400).json({ success: false, message: 'title, listing_type, property_type_id and price are required' });
     }
 
-    // resolve or create location
     let locationId = null;
     if (city && locality) {
       const locResult = await client.query(
@@ -44,10 +39,9 @@ async function createProperty(req, res) {
         address, latitude, longitude, price, monthly_rent, security_deposit,
         area_sqft, bedrooms, bathrooms, balconies, floor_number, total_floors,
         furnishing, facing, age_of_property, parking, amenities,
-        contact_name, contact_phone, contact_email,
-        sharing_type, gender_preference, meals_included, price_per_bed
+        contact_name, contact_phone, contact_email
       ) VALUES (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26
       ) RETURNING *`,
       [
         req.user.id, title, description, listing_type, property_type_id, locationId,
@@ -55,20 +49,23 @@ async function createProperty(req, res) {
         area_sqft || null, bedrooms || null, bathrooms || null, balconies || null, floor_number || null, total_floors || null,
         furnishing || null, facing || null, age_of_property || null, parking || 0, amenitiesArray,
         contact_name || null, contact_phone || null, contact_email || null,
-        sharing_type || null, gender_preference || null, meals_included === 'true' || meals_included === true, price_per_bed || null,
       ]
     );
 
     const property = inserted.rows[0];
 
-    // handle uploaded images (multer populates req.files)
     if (req.files && req.files.length > 0) {
-      const values = req.files.map((file, idx) =>
-        `('${property.id}', '/uploads/properties/${file.filename}', ${idx === 0}, ${idx})`
-      ).join(',');
+      const rows = [];
+      const imgParams = [];
+      let n = 1;
+      req.files.forEach((file, idx) => {
+        rows.push(`($${n++}, $${n++}, $${n++}, $${n++})`);
+        imgParams.push(property.id, file.path, idx === 0, idx);
+      });
 
       await client.query(
-        `INSERT INTO property_images (property_id, image_url, is_primary, display_order) VALUES ${values}`
+        `INSERT INTO property_images (property_id, image_url, is_primary, display_order) VALUES ${rows.join(',')}`,
+        imgParams
       );
     }
 
@@ -83,17 +80,11 @@ async function createProperty(req, res) {
   }
 }
 
-// ------------------------------------------------------------
-// SEARCH / LIST properties with filters - GET /api/properties
-// Query params: listing_type, city, locality, property_type_id, min_price,
-// max_price, bedrooms, furnishing, q (text search), page, limit, sort
-// ------------------------------------------------------------
 async function listProperties(req, res) {
   try {
     const {
       listing_type, city, locality, property_type_id, min_price, max_price,
       bedrooms, furnishing, q, page = 1, limit = 12, sort = 'newest',
-      pg, gender_preference, sharing_type,
     } = req.query;
 
     const conditions = [`p.status = 'approved'`];
@@ -108,12 +99,6 @@ async function listProperties(req, res) {
     if (max_price) { conditions.push(`p.price <= $${i++}`); params.push(max_price); }
     if (bedrooms) { conditions.push(`p.bedrooms = $${i++}`); params.push(bedrooms); }
     if (furnishing) { conditions.push(`p.furnishing = $${i++}`); params.push(furnishing); }
-    // "PG/Hostel" tab in the header links here with ?pg=true — matches the
-    // seeded/admin-created 'PG / Hostel' property type by name so we don't
-    // need to know its numeric id on the frontend.
-    if (pg === 'true') { conditions.push(`pt.name ILIKE 'PG%'`); }
-    if (gender_preference) { conditions.push(`p.gender_preference = $${i++}`); params.push(gender_preference); }
-    if (sharing_type) { conditions.push(`p.sharing_type = $${i++}`); params.push(sharing_type); }
     if (q) {
       conditions.push(`(p.title ILIKE $${i} OR p.description ILIKE $${i} OR l.city ILIKE $${i} OR l.locality ILIKE $${i})`);
       params.push(`%${q}%`);
@@ -168,9 +153,6 @@ async function listProperties(req, res) {
   }
 }
 
-// ------------------------------------------------------------
-// GET single property details - GET /api/properties/:id
-// ------------------------------------------------------------
 async function getPropertyById(req, res) {
   try {
     const { id } = req.params;
@@ -196,10 +178,8 @@ async function getPropertyById(req, res) {
       [id]
     );
 
-    // increment view count (fire and forget)
     query(`UPDATE properties SET views_count = views_count + 1 WHERE id = $1`, [id]).catch(() => {});
 
-    // track recently viewed if logged in
     if (req.user) {
       query(
         `INSERT INTO recently_viewed (user_id, property_id) VALUES ($1, $2)
@@ -218,9 +198,6 @@ async function getPropertyById(req, res) {
   }
 }
 
-// ------------------------------------------------------------
-// UPDATE property (owner or admin only) - PUT /api/properties/:id
-// ------------------------------------------------------------
 async function updateProperty(req, res) {
   try {
     const { id } = req.params;
@@ -236,7 +213,6 @@ async function updateProperty(req, res) {
       'bathrooms', 'balconies', 'floor_number', 'total_floors', 'furnishing',
       'facing', 'age_of_property', 'parking', 'amenities', 'contact_name',
       'contact_phone', 'contact_email', 'address',
-      'sharing_type', 'gender_preference', 'meals_included', 'price_per_bed',
     ];
 
     const updates = [];
@@ -266,13 +242,6 @@ async function updateProperty(req, res) {
   }
 }
 
-// ------------------------------------------------------------
-// UPDATE own property status - PATCH /api/properties/:id/status
-// Lets an owner (or admin) mark their own approved listing as sold/rented,
-// or reactivate it back to "approved" if it comes back on the market.
-// This is separate from the admin-only approve/reject workflow — owners
-// can only move between approved <-> sold/rented, never touch pending/rejected.
-// ------------------------------------------------------------
 async function updateOwnPropertyStatus(req, res) {
   try {
     const { id } = req.params;
@@ -302,9 +271,6 @@ async function updateOwnPropertyStatus(req, res) {
   }
 }
 
-// ------------------------------------------------------------
-// DELETE property (owner or admin) - DELETE /api/properties/:id
-// ------------------------------------------------------------
 async function deleteProperty(req, res) {
   try {
     const { id } = req.params;
@@ -323,9 +289,6 @@ async function deleteProperty(req, res) {
   }
 }
 
-// ------------------------------------------------------------
-// GET properties posted by logged-in user - GET /api/properties/my-listings
-// ------------------------------------------------------------
 async function getMyListings(req, res) {
   try {
     const result = await query(
@@ -344,25 +307,6 @@ async function getMyListings(req, res) {
   }
 }
 
-// ------------------------------------------------------------
-// Featured projects for homepage - GET /api/properties/featured-projects
-// ------------------------------------------------------------
-async function getFeaturedProjects(req, res) {
-  try {
-    const result = await query(
-      `SELECT fp.*, l.city, l.locality FROM featured_projects fp
-       LEFT JOIN locations l ON l.id = fp.location_id
-       WHERE fp.is_active = TRUE ORDER BY fp.created_at DESC LIMIT 12`
-    );
-    return res.json({ success: true, projects: result.rows });
-  } catch (err) {
-    return res.status(500).json({ success: false, message: 'Failed to fetch featured projects' });
-  }
-}
-
-// ------------------------------------------------------------
-// Property types list (for dropdowns/filters)
-// ------------------------------------------------------------
 async function getPropertyTypes(req, res) {
   try {
     const result = await query('SELECT * FROM property_types ORDER BY id ASC');
@@ -380,6 +324,5 @@ module.exports = {
   updateOwnPropertyStatus,
   deleteProperty,
   getMyListings,
-  getFeaturedProjects,
   getPropertyTypes,
 };

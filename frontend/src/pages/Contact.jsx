@@ -13,9 +13,6 @@ export default function Contact() {
 
   function handleSubmit(e) {
     e.preventDefault();
-    // No backend endpoint for contact messages yet — this opens the user's
-    // default email client pre-filled, which is a reasonable stand-in until
-    // a real /api/contact endpoint + inbox is wired up.
     const subject = encodeURIComponent(`Message from ${form.name || 'Nestara visitor'}`);
     const body = encodeURIComponent(`${form.message}\n\n— ${form.name} (${form.email})`);
     window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;

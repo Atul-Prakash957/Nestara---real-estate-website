@@ -64,7 +64,6 @@ export default function PropertyCard({ property, onShortlistChange }) {
       to={`/property/${property.id}`}
       className="group block overflow-hidden rounded-xl2 border border-line bg-surface shadow-card transition hover:shadow-card-hover"
     >
-      {/* Image */}
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-canvas">
         {images.length > 0 ? (
           <img
@@ -102,12 +101,6 @@ export default function PropertyCard({ property, onShortlistChange }) {
           </span>
         )}
 
-        {property.price_per_bed && (
-          <span className={`absolute left-2 ${property.is_featured ? 'top-9' : 'top-2'} rounded-md bg-teal px-2 py-0.5 text-[11px] font-semibold text-white shadow`}>
-            PG/Hostel
-          </span>
-        )}
-
         <button
           onClick={toggleShortlist}
           disabled={saving}
@@ -122,11 +115,10 @@ export default function PropertyCard({ property, onShortlistChange }) {
         </span>
       </div>
 
-      {/* Body */}
       <div className="p-3.5">
         <div className="flex items-start justify-between gap-2">
           <p className="font-display text-lg font-700 text-ink">
-            {property.price_per_bed ? `${formatPrice(property.price_per_bed)} /bed /mo` : formatPrice(property.price)}
+            {formatPrice(property.price)}
           </p>
           {property.status === 'approved' && (
             <span className="flex items-center gap-1 text-[11px] font-medium text-teal">
@@ -145,24 +137,14 @@ export default function PropertyCard({ property, onShortlistChange }) {
         </p>
 
         <div className="mt-3 flex items-center gap-4 border-t border-line pt-3 text-xs text-muted">
-          {property.price_per_bed ? (
-            <>
-              {property.sharing_type && <span className="capitalize">{property.sharing_type} Sharing</span>}
-              {property.gender_preference && <span className="capitalize">{property.gender_preference}</span>}
-              {property.meals_included && <span>Meals Included</span>}
-            </>
-          ) : (
-            <>
-              {property.bedrooms && (
-                <span className="flex items-center gap-1"><BedDouble size={14} /> {property.bedrooms} Beds</span>
-              )}
-              {property.bathrooms && (
-                <span className="flex items-center gap-1"><Bath size={14} /> {property.bathrooms} Baths</span>
-              )}
-              {property.area_sqft && (
-                <span className="flex items-center gap-1"><Ruler size={14} /> {property.area_sqft} sqft</span>
-              )}
-            </>
+          {property.bedrooms && (
+            <span className="flex items-center gap-1"><BedDouble size={14} /> {property.bedrooms} Beds</span>
+          )}
+          {property.bathrooms && (
+            <span className="flex items-center gap-1"><Bath size={14} /> {property.bathrooms} Baths</span>
+          )}
+          {property.area_sqft && (
+            <span className="flex items-center gap-1"><Ruler size={14} /> {property.area_sqft} sqft</span>
           )}
         </div>
       </div>

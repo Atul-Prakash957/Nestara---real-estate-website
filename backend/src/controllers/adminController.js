@@ -1,6 +1,5 @@
 const { query } = require('../config/db');
 
-// GET /api/admin/properties?status=pending
 async function getAllPropertiesAdmin(req, res) {
   try {
     const { status } = req.query;
@@ -27,7 +26,6 @@ async function getAllPropertiesAdmin(req, res) {
   }
 }
 
-// PATCH /api/admin/properties/:id/status  { status: 'approved'|'rejected'|'sold'|'rented' }
 async function updatePropertyStatus(req, res) {
   try {
     const { id } = req.params;
@@ -44,7 +42,6 @@ async function updatePropertyStatus(req, res) {
   }
 }
 
-// PATCH /api/admin/properties/:id/feature  { isFeatured: true }
 async function toggleFeatured(req, res) {
   try {
     const { id } = req.params;
@@ -60,7 +57,6 @@ async function toggleFeatured(req, res) {
   }
 }
 
-// GET /api/admin/dashboard-stats
 async function getDashboardStats(req, res) {
   try {
     const [users, properties, pending, leads] = await Promise.all([
@@ -98,7 +94,6 @@ async function getDashboardStats(req, res) {
   }
 }
 
-// GET /api/admin/users
 async function getAllUsers(req, res) {
   try {
     const result = await query(
@@ -111,7 +106,6 @@ async function getAllUsers(req, res) {
   }
 }
 
-// PATCH /api/admin/users/:id/toggle-active
 async function toggleUserActive(req, res) {
   try {
     const { id } = req.params;
@@ -123,34 +117,6 @@ async function toggleUserActive(req, res) {
     return res.json({ success: true, user: result.rows[0] });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Failed to update user', error: err.message });
-  }
-}
-
-// POST /api/admin/featured-projects
-async function createFeaturedProject(req, res) {
-  try {
-    const { name, builder_name, city, locality, price_range, banner_image, possession_date } = req.body;
-    if (!name) return res.status(400).json({ success: false, message: 'name is required' });
-
-    let locationId = null;
-    if (city && locality) {
-      const loc = await query(
-        `INSERT INTO locations (city, locality) VALUES ($1,$2)
-         ON CONFLICT (city, locality) DO UPDATE SET city = EXCLUDED.city RETURNING id`,
-        [city, locality]
-      );
-      locationId = loc.rows[0].id;
-    }
-
-    const result = await query(
-      `INSERT INTO featured_projects (name, builder_name, location_id, price_range, banner_image, possession_date)
-       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
-      [name, builder_name || null, locationId, price_range || null, banner_image || null, possession_date || null]
-    );
-
-    return res.status(201).json({ success: true, project: result.rows[0] });
-  } catch (err) {
-    return res.status(500).json({ success: false, message: 'Failed to create featured project', error: err.message });
   }
 }
 
@@ -174,93 +140,9 @@ async function updateUserRole(req, res) {
     );
     if (result.rows.length === 0) return res.status(404).json({ success: false, message: 'User not found' });
 
-return res.status(201).json({ success: true, project: result.rows[0] });
+    return res.json({ success: true, message: `${result.rows[0].name} is now ${role}`, user: result.rows[0] });
   } catch (err) {
-    return res.status(500).json({ success: false, message: 'Failed to create featured project', error: err.message });
-  }
-}
-
-// GET /api/admin/featured-projects - all projects, including inactive ones
-async function getFeaturedProjectsAdmin(req, res) {
-  try {
-    const result = await query(
-      `SELECT fp.*, l.city, l.locality FROM featured_projects fp
-       LEFT JOIN locations l ON l.id = fp.location_id
-       ORDER BY fp.created_at DESC`
-    );
-    return res.json({ success: true, projects: result.rows });
-  } catch (err) {
-    return res.status(500).json({ success: false, message: 'Failed to fetch featured projects', error: err.message });
-  }
-}
-
-// PUT /api/admin/featured-projects/:id
-async function updateFeaturedProject(req, res) {
-  try {
-    const { id } = req.params;
-    const { name, builder_name, city, locality, price_range, banner_image, possession_date } = req.body;
-
-    let locationId;
-    if (city && locality) {
-      const loc = await query(
-        `INSERT INTO locations (city, locality) VALUES ($1,$2)
-         ON CONFLICT (city, locality) DO UPDATE SET city = EXCLUDED.city RETURNING id`,
-        [city, locality]
-      );
-      locationId = loc.rows[0].id;
-    }
-
-    const fields = [];
-    const params = [];
-    let i = 1;
-    if (name !== undefined) { fields.push(`name = $${i++}`); params.push(name); }
-    if (builder_name !== undefined) { fields.push(`builder_name = $${i++}`); params.push(builder_name); }
-    if (locationId !== undefined) { fields.push(`location_id = $${i++}`); params.push(locationId); }
-    if (price_range !== undefined) { fields.push(`price_range = $${i++}`); params.push(price_range); }
-    if (banner_image !== undefined) { fields.push(`banner_image = $${i++}`); params.push(banner_image); }
-    if (possession_date !== undefined) { fields.push(`possession_date = $${i++}`); params.push(possession_date); }
-
-    if (fields.length === 0) {
-      return res.status(400).json({ success: false, message: 'No valid fields to update' });
-    }
-
-    params.push(id);
-    const result = await query(
-      `UPDATE featured_projects SET ${fields.join(', ')} WHERE id = $${i} RETURNING *`,
-      params
-    );
-    if (result.rows.length === 0) return res.status(404).json({ success: false, message: 'Project not found' });
-
-    return res.json({ success: true, project: result.rows[0] });
-  } catch (err) {
-    return res.status(500).json({ success: false, message: 'Failed to update featured project', error: err.message });
-  }
-}
-
-// PATCH /api/admin/featured-projects/:id/toggle-active
-async function toggleFeaturedProjectActive(req, res) {
-  try {
-    const { id } = req.params;
-    const result = await query(
-      `UPDATE featured_projects SET is_active = NOT is_active WHERE id = $1 RETURNING *`,
-      [id]
-    );
-    if (result.rows.length === 0) return res.status(404).json({ success: false, message: 'Project not found' });
-    return res.json({ success: true, project: result.rows[0] });
-  } catch (err) {
-    return res.status(500).json({ success: false, message: 'Failed to toggle project', error: err.message });
-  }
-}
-
-// DELETE /api/admin/featured-projects/:id
-async function deleteFeaturedProject(req, res) {
-  try {
-    const { id } = req.params;
-    const result = await query('DELETE FROM featured_projects WHERE id = $1 RETURNING id', [id]);
-    if (result.rows.length === 0) return res.status(404).json({ success: false, message: 'Project not found' });
-    return res.json({ success: true, message: 'Project deleted' });
-  } catch (err) {
-    return res.status(500).json({ success: false, message: 'Failed to delete featured project', error: err.message });
+    return res.status(500).json({ success: false, message: 'Failed to update role', error: err.message });
   }
 }
 
@@ -272,9 +154,4 @@ module.exports = {
   getAllUsers,
   toggleUserActive,
   updateUserRole,
-  createFeaturedProject,
-  getFeaturedProjectsAdmin,
-  updateFeaturedProject,
-  toggleFeaturedProjectActive,
-  deleteFeaturedProject,
 };

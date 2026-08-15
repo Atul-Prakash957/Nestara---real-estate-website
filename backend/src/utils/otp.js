@@ -1,14 +1,13 @@
 const { query } = require('../config/db');
 
 function generateOtp() {
-  return Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit
+  return Math.floor(100000 + Math.random() * 900000).toString(); 
 }
 
 async function createOtp(email, purpose = 'register') {
   const otpCode = generateOtp();
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); 
 
-  // invalidate previous unused OTPs of same purpose
   await query(
     `UPDATE otp_verifications SET is_used = TRUE
      WHERE email = $1 AND purpose = $2 AND is_used = FALSE`,

@@ -4,9 +4,8 @@ const router = express.Router();
 const auth = require('../controllers/authController');
 const { requireAuth } = require('../middleware/auth');
 
-// Limit OTP-related endpoints to prevent abuse
 const otpLimiter = rateLimit({
-  windowMs: 10 * 60 * 1000, // 10 min
+  windowMs: 10 * 60 * 1000,
   max: 5,
   message: { success: false, message: 'Too many OTP requests. Please try again later.' },
 });

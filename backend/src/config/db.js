@@ -10,6 +10,7 @@ const pool = new Pool({
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 
 pool.on('connect', () => console.log('✅ PostgreSQL pool: new client connected'));
@@ -18,7 +19,6 @@ pool.on('error', (err) => {
   process.exit(-1);
 });
 
-// Helper: run a query with automatic logging in dev
 const query = (text, params) => {
   const start = Date.now();
   return pool.query(text, params).then((res) => {

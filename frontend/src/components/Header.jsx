@@ -1,22 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  MapPin, ChevronDown, Menu, X, User, Heart, Clock,
+  ChevronDown, Menu, X, Heart, Clock,
   Building2, LogOut, LayoutDashboard, PlusCircle,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useLocation as useCityLocation } from '../hooks/useLocation';
 
 const NAV_LINKS = [
   { label: 'Buy', to: '/search?listing_type=buy' },
   { label: 'Rent', to: '/search?listing_type=rent' },
-  { label: 'PG/Hostel', to: '/search?pg=true' },
   { label: 'Recently Added', to: '/search?sort=newest' },
 ];
 
 export default function Header() {
   const { user, logout, isAdmin } = useAuth();
-  const { city, detecting, detect } = useCityLocation();
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -48,17 +45,6 @@ export default function Header() {
           </div>
           <span className="font-display text-xl font-700 tracking-tight text-white">Nestara</span>
         </Link>
-
-        {/* City selector */}
-        <button
-          onClick={detect}
-          className="hidden items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 text-sm text-white/90 hover:bg-white/5 md:flex"
-          title="Detect my location"
-        >
-          <MapPin size={16} className="text-coral" />
-          <span className="max-w-[110px] truncate">{detecting ? 'Locating…' : city}</span>
-          <ChevronDown size={14} />
-        </button>
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-1 lg:flex">
@@ -137,12 +123,6 @@ export default function Header() {
       {/* Mobile menu */}
       {mobileOpen && (
         <div className="border-t border-white/10 bg-navy-dark px-4 py-3 lg:hidden">
-          <button
-            onClick={detect}
-            className="mb-2 flex items-center gap-1.5 text-sm text-white/90"
-          >
-            <MapPin size={16} className="text-coral" /> {detecting ? 'Locating…' : city}
-          </button>
           {NAV_LINKS.map((link) => (
             <Link key={link.label} to={link.to} className="block py-2 text-sm text-white/90" onClick={() => setMobileOpen(false)}>
               {link.label}

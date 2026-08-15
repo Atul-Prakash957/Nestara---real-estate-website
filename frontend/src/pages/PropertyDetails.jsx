@@ -49,7 +49,6 @@ export default function PropertyDetails() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 lg:px-8">
-      {/* Gallery */}
       <div className="relative aspect-video w-full overflow-hidden rounded-xl2 bg-canvas">
         {images.length > 0 ? (
           <img src={images[imgIndex]} alt={property.title} className="h-full w-full object-cover" />
@@ -82,7 +81,6 @@ export default function PropertyDetails() {
       )}
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_340px]">
-        {/* Main info */}
         <div>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -92,7 +90,7 @@ export default function PropertyDetails() {
               </p>
             </div>
             <p className="font-display text-3xl font-800 text-coral">
-              {property.price_per_bed ? `${formatPrice(property.price_per_bed)} /bed /mo` : formatPrice(property.price)}
+              {formatPrice(property.price)}
             </p>
           </div>
 
@@ -116,9 +114,6 @@ export default function PropertyDetails() {
             <Detail icon={<Calendar size={16} />} label="Age" value={property.age_of_property} />
             <Detail icon={<Building2 size={16} />} label="Furnishing" value={property.furnishing} />
             <Detail icon={<Building2 size={16} />} label="Floor" value={property.floor_number ? `${property.floor_number} of ${property.total_floors || '-'}` : null} />
-            <Detail icon={<Building2 size={16} />} label="Sharing" value={property.sharing_type ? `${property.sharing_type} sharing` : null} />
-            <Detail icon={<Building2 size={16} />} label="Preference" value={property.gender_preference} />
-            <Detail icon={<CheckCircle2 size={16} />} label="Meals" value={property.meals_included ? 'Included' : null} />
           </section>
 
           {property.amenities?.length > 0 && (
@@ -135,7 +130,6 @@ export default function PropertyDetails() {
           )}
         </div>
 
-        {/* Contact card */}
         <aside className="h-fit rounded-xl2 border border-line bg-surface p-5 shadow-card lg:sticky lg:top-20">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted">Contact {property.owner_name ? 'Owner' : 'Agent'}</p>
           <p className="mt-1 font-display text-lg font-700 text-ink">{property.contact_name || property.owner_name || 'Property Owner'}</p>
