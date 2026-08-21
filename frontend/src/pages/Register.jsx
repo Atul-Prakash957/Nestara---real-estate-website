@@ -33,7 +33,7 @@ export default function Register() {
         <Field icon={<User size={16} />} label="Full name" value={form.name} onChange={update('name')} required placeholder="Aditi Sharma" />
         <Field icon={<Mail size={16} />} label="Email" type="email" value={form.email} onChange={update('email')} required placeholder="you@example.com" />
         <Field icon={<Phone size={16} />} label="Phone (optional)" value={form.phone} onChange={update('phone')} placeholder="98765 43210" />
-        <Field icon={<Lock size={16} />} label="Password" type="password" value={form.password} onChange={update('password')} required placeholder="At least 6 characters" minLength={6} />
+        <Field icon={<Lock size={16} />} label="Password" type="password" value={form.password} onChange={update('password')} required placeholder="At least 6 characters" minLength={6} autoComplete="new-password" />
 
         {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
 

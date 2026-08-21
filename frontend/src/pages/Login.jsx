@@ -40,7 +40,7 @@ export default function Login() {
     <AuthShell title="Welcome back" subtitle="Log in to manage your listings and shortlisted properties.">
       <form onSubmit={handleSubmit} className="space-y-4">
         <Field icon={<Mail size={16} />} label="Email" type="email" value={form.email} onChange={update('email')} required placeholder="you@example.com" />
-        <Field icon={<Lock size={16} />} label="Password" type="password" value={form.password} onChange={update('password')} required placeholder="Your password" />
+        <Field icon={<Lock size={16} />} label="Password" type="password" value={form.password} onChange={update('password')} required placeholder="Your password" autoComplete="current-password" />
 
         <div className="flex justify-end">
           <Link to="/forgot-password" className="text-xs font-medium text-coral">Forgot password?</Link>
