@@ -16,6 +16,7 @@ const initialForm = {
 };
 
 export default function PostProperty() {
+  // We use multiple state variables to track form data, current step, and API responses
   const [step, setStep] = useState(0);
   const [form, setForm] = useState(initialForm);
   const [types, setTypes] = useState([]);
@@ -25,7 +26,10 @@ export default function PostProperty() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  // useEffect runs after the component renders. 
+  // The empty dependency array [] means it only runs ONCE when the component first mounts.
   useEffect(() => {
+    // Fetch property types (like Villa, Apartment) from backend
     propertyApi.propertyTypes().then((res) => setTypes(res.data.types || []));
   }, []);
 

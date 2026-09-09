@@ -3,23 +3,25 @@
 -- ============================================================
 -- Run: psql -U your_user -d your_db -f schema.sql
 
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Enables typo-tolerant property search (for example, "Hyderbad").
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- ------------------------------------------------------------
--- USERS
+-- USERS TABLE
 -- ------------------------------------------------------------
+-- BEGINNER SQL CONCEPTS:
+-- UUID: A long unique string used for IDs instead of 1, 2, 3 so hackers can't guess user IDs.
+-- VARCHAR(160): A string with a maximum length of 160 characters.
+-- TIMESTAMPTZ: Saves the date and time along with the Time Zone.
 CREATE TABLE IF NOT EXISTS users (
-    id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name              VARCHAR(120) NOT NULL,
     email             VARCHAR(160) UNIQUE NOT NULL,
     phone             VARCHAR(15) UNIQUE,
     password_hash     VARCHAR(255) NOT NULL,
     role              VARCHAR(20) NOT NULL DEFAULT 'user', -- 'user' | 'agent' | 'admin'
     is_email_verified BOOLEAN NOT NULL DEFAULT FALSE,
-    is_phone_verified BOOLEAN NOT NULL DEFAULT FALSE,
     profile_image     TEXT,
     city              VARCHAR(100),
     is_active         BOOLEAN NOT NULL DEFAULT TRUE,
@@ -31,7 +33,7 @@ CREATE TABLE IF NOT EXISTS users (
 -- OTP VERIFICATIONS (email OTP for register / login / reset)
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS otp_verifications (
-    id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email       VARCHAR(160) NOT NULL,
     otp_code    VARCHAR(6) NOT NULL,
     purpose     VARCHAR(30) NOT NULL DEFAULT 'register', -- 'register' | 'login' | 'reset_password'
@@ -45,10 +47,9 @@ CREATE INDEX IF NOT EXISTS idx_otp_email ON otp_verifications(email);
 -- LOCATIONS (city / locality hierarchy for search & filters)
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS locations (
-    id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     city        VARCHAR(100) NOT NULL,
     locality    VARCHAR(120) NOT NULL,
-    state       VARCHAR(100),
     latitude    DOUBLE PRECISION,
     longitude   DOUBLE PRECISION,
     UNIQUE (city, locality)
@@ -75,10 +76,14 @@ INSERT INTO property_types (name, category) VALUES
 ON CONFLICT (name) DO NOTHING;
 
 -- ------------------------------------------------------------
--- PROPERTIES
+-- PROPERTIES TABLE
 -- ------------------------------------------------------------
+-- BEGINNER SQL CONCEPTS:
+-- FOREIGN KEY (REFERENCES): Links this table to another. For example, 'owner_id' links to the 'users' table.
+-- ON DELETE CASCADE: If a user deletes their account, this rule automatically deletes all their properties too!
+-- NUMERIC(14,2): A decimal number with up to 14 total digits, and exactly 2 digits after the decimal point.
 CREATE TABLE IF NOT EXISTS properties (
-    id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     owner_id          UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     title             VARCHAR(200) NOT NULL,
     description       TEXT,
@@ -90,7 +95,6 @@ CREATE TABLE IF NOT EXISTS properties (
     longitude         DOUBLE PRECISION,
 
     price             NUMERIC(14,2) NOT NULL,
-    price_per_sqft    NUMERIC(10,2),
     monthly_rent      NUMERIC(12,2),
     security_deposit  NUMERIC(12,2),
 
@@ -131,7 +135,7 @@ CREATE INDEX IF NOT EXISTS idx_properties_title_trgm ON properties USING GIN (ti
 -- PROPERTY IMAGES (multiple images per property)
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS property_images (
-    id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     property_id   UUID NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
     image_url     TEXT NOT NULL,
     is_primary    BOOLEAN NOT NULL DEFAULT FALSE,
@@ -140,26 +144,13 @@ CREATE TABLE IF NOT EXISTS property_images (
 );
 CREATE INDEX IF NOT EXISTS idx_property_images_property ON property_images(property_id);
 
--- ------------------------------------------------------------
--- FEATURED PROJECTS (builder projects shown on homepage)
--- ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS featured_projects (
-    id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name          VARCHAR(200) NOT NULL,
-    builder_name  VARCHAR(150),
-    location_id   UUID REFERENCES locations(id),
-    price_range   VARCHAR(80),   -- '80L - 1.2Cr'
-    banner_image  TEXT,
-    possession_date VARCHAR(50),
-    is_active     BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
-);
+
 
 -- ------------------------------------------------------------
 -- SHORTLISTS (saved properties)
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS shortlists (
-    id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id      UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     property_id  UUID NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
     created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -170,7 +161,7 @@ CREATE TABLE IF NOT EXISTS shortlists (
 -- RECENTLY VIEWED
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS recently_viewed (
-    id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id      UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     property_id  UUID NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
     viewed_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -181,7 +172,7 @@ CREATE TABLE IF NOT EXISTS recently_viewed (
 -- RECENT SEARCHES (for footer / quick links)
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS recent_searches (
-    id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id      UUID REFERENCES users(id) ON DELETE CASCADE,
     search_query VARCHAR(255) NOT NULL,
     filters      JSONB,
@@ -192,7 +183,7 @@ CREATE TABLE IF NOT EXISTS recent_searches (
 -- PROPERTY CONTACT / LEADS (buyer enquiries sent to owner)
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS property_leads (
-    id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     property_id  UUID NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
     user_id      UUID REFERENCES users(id),
     name         VARCHAR(120),

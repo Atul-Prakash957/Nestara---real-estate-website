@@ -21,9 +21,11 @@ import Terms from './pages/Terms';
 
 export default function App() {
   return (
+    // The main layout wrapper
     <div className="flex min-h-screen flex-col">
       <Header />
       <main className="flex-1">
+        {/* Routes component decides which Page component to render based on the URL */}
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/search" element={<SearchResults />} />
@@ -35,9 +37,11 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
+          {/* RequireAuth wrapper checks if the user is logged in before rendering the page */}
           <Route path="/post-property" element={<RequireAuth><PostProperty /></RequireAuth>} />
           <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
 
+          {/* RequireAdmin wrapper checks if the user is an admin */}
           <Route path="/admin" element={<RequireAdmin><AdminDashboard /></RequireAdmin>} />
           <Route path="/admin-setup" element={<AdminSetup />} />
 

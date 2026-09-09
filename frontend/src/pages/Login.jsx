@@ -6,11 +6,18 @@ import { useAuth } from '../context/AuthContext';
 import { AuthShell, Field } from './Register';
 
 export default function Login() {
+  // useState manages component-level state variables. When these change, the component re-renders.
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // useAuth is a custom hook that gives us access to our global AuthContext (e.g. login function)
   const { login } = useAuth();
+  
+  // useNavigate lets us programmatically redirect the user to another page
   const navigate = useNavigate();
+  
+  // useSearchParams lets us read URL parameters (e.g. ?redirect=/profile)
   const [params] = useSearchParams();
 
   function update(field) {

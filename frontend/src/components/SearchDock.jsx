@@ -7,15 +7,21 @@ import { useAuth } from '../context/AuthContext';
 const TABS = [
   { key: 'buy', label: 'Buy' },
   { key: 'rent', label: 'Rent' },
-  { key: 'commercial', label: 'Commercial' },
 ];
 
-const QUICK_TYPES = ['1 BHK', '2 BHK', '3 BHK', 'Villa', 'Bungalow', 'Plot / Land'];
+const QUICK_TYPES = [
+  { label: '1 BHK', params: { bedrooms: 1 } },
+  { label: '2 BHK', params: { bedrooms: 2 } },
+  { label: '3 BHK', params: { bedrooms: 3 } },
+  { label: 'Villa', params: { q: 'villa' } },
+  { label: 'Commercial', params: { q: 'office' } },
+];
 
 export default function SearchDock() {
   const [tab, setTab] = useState('buy');
   const [query, setQuery] = useState('');
-  const [type, setType] = useState('');
+  // Quick type now stores the entire params object
+  const [quickType, setQuickType] = useState(null); 
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -23,12 +29,17 @@ export default function SearchDock() {
     e.preventDefault();
     const params = new URLSearchParams();
     const searchQuery = query.trim();
-    params.set('listing_type', tab === 'commercial' ? 'buy' : tab);
+    
+    params.set('listing_type', tab);
     if (searchQuery) params.set('q', searchQuery);
-    if (type) params.set('type', type);
+    
+    // Apply quick type params if selected
+    if (quickType) {
+      Object.entries(quickType.params).forEach(([k, v]) => params.set(k, v));
+    }
 
     if (user && searchQuery) {
-      userApi.saveSearch({ searchQuery, filters: { tab, type } }).catch(() => {});
+      userApi.saveSearch({ searchQuery, filters: { tab, quickType } }).catch(() => {});
     }
     navigate(`/search?${params.toString()}`);
   }
@@ -74,14 +85,14 @@ export default function SearchDock() {
       <div className="no-scrollbar flex gap-2 overflow-x-auto px-2 pb-1">
         {QUICK_TYPES.map((qt) => (
           <button
-            key={qt}
+            key={qt.label}
             type="button"
-            onClick={() => setType(qt)}
+            onClick={() => setQuickType(qt)}
             className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition ${
-              type === qt ? 'border-teal bg-teal-light text-teal-dark' : 'border-line text-muted hover:border-teal'
+              quickType?.label === qt.label ? 'border-teal bg-teal-light text-teal-dark' : 'border-line text-muted hover:border-teal'
             }`}
           >
-            {qt}
+            {qt.label}
           </button>
         ))}
       </div>

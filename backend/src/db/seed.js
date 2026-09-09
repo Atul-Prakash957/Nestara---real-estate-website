@@ -199,51 +199,6 @@ async function seedProperties(owners) {
   return created;
 }
 
-async function seedFeaturedProjects() {
-  const existing = await query('SELECT COUNT(*) FROM featured_projects');
-  if (Number(existing.rows[0].count) > 0) return 0;
-
-  const projects = [
-    { name: 'Prestige Lakeside Habitat', builder: 'Prestige Group', city: 'Bengaluru', locality: 'Whitefield', range: '₹85L - 1.4Cr', possession: 'Dec 2027' },
-    { name: 'Godrej Emerald', builder: 'Godrej Properties', city: 'Pune', locality: 'Hinjewadi', range: '₹65L - 1.1Cr', possession: 'Jun 2026' },
-    { name: 'DLF The Camellias', builder: 'DLF Limited', city: 'Delhi', locality: 'Vasant Kunj', range: '₹4.5Cr - 8Cr', possession: 'Ready to Move' },
-    { name: 'Lodha Park', builder: 'Lodha Group', city: 'Mumbai', locality: 'Andheri West', range: '₹1.8Cr - 3.2Cr', possession: 'Mar 2027' },
-    { name: 'My Home Bhooja', builder: 'My Home Group', city: 'Hyderabad', locality: 'Gachibowli', range: '₹75L - 1.3Cr', possession: 'Sep 2026' },
-    { name: 'Casagrand Utopia', builder: 'Casagrand', city: 'Chennai', locality: 'OMR', range: '₹55L - 95L', possession: 'Ready to Move' },
-  ];
-
-  for (const p of projects) {
-    const loc = await query(
-      `INSERT INTO locations (city, locality) VALUES ($1,$2)
-       ON CONFLICT (city, locality) DO UPDATE SET city = EXCLUDED.city RETURNING id`,
-      [p.city, p.locality]
-    );
-    const seed = randInt(1, 5000);
-    await query(
-      `INSERT INTO featured_projects (name, builder_name, location_id, price_range, banner_image, possession_date, is_active)
-       VALUES ($1,$2,$3,$4,$5,$6,TRUE)`,
-      [p.name, p.builder, loc.rows[0].id, p.range, `https://picsum.photos/seed/project${seed}/700/400`, p.possession]
-    );
-  }
-  return projects.length;
-}
-
-async function main() {
-  console.log('🌱 Seeding demo owners...');
-  const owners = await seedOwners();
-  console.log(`   ${owners.length} owner accounts ready (password for all: Demo@1234)`);
-
-  console.log('🧹 Clearing previously seeded properties (if any)...');
-  await clearPreviousSeedData(owners.map((o) => o.id));
-
-  console.log('🏠 Seeding properties...');
-  const count = await seedProperties(owners);
-  console.log(`   ${count} properties created (approved, spread across all types & cities)`);
-
-  console.log('🏗️  Seeding featured projects...');
-  const projectCount = await seedFeaturedProjects();
-  console.log(`   ${projectCount ? projectCount + ' featured projects created' : 'featured projects already exist, skipped'}`);
-
   console.log('✅ Done! Refresh your home page to see listings.');
   await pool.end();
 }

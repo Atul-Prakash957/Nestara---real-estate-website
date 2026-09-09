@@ -39,19 +39,6 @@ export default function SearchResults() {
   }, [minPrice, maxPrice]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (minPriceInput === minPrice && maxPriceInput === maxPrice) return;
-      const next = new URLSearchParams(params);
-      if (minPriceInput) next.set('min_price', minPriceInput); else next.delete('min_price');
-      if (maxPriceInput) next.set('max_price', maxPriceInput); else next.delete('max_price');
-      next.delete('page');
-      setParams(next);
-    }, 500);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [minPriceInput, maxPriceInput]);
-
-  useEffect(() => {
     propertyApi.propertyTypes().then((res) => setPropertyTypes(res.data.types || [])).catch(() => {});
   }, []);
 
@@ -67,11 +54,12 @@ export default function SearchResults() {
       .finally(() => setLoading(false));
   }, [params]);
 
+  // Helper function to update the URL parameters without losing existing ones
   function updateParam(key, value) {
     const next = new URLSearchParams(params);
     if (value === '' || value === null) next.delete(key);
     else next.set(key, value);
-    next.delete('page');
+    next.delete('page'); // Reset to page 1 on any filter change
     setParams(next);
   }
 
@@ -137,6 +125,15 @@ export default function SearchResults() {
               <input type="number" placeholder="Min" value={minPriceInput} onChange={(e) => setMinPriceInput(e.target.value)} className="w-1/2 rounded-lg border border-line px-2 py-1.5 text-sm" />
               <input type="number" placeholder="Max" value={maxPriceInput} onChange={(e) => setMaxPriceInput(e.target.value)} className="w-1/2 rounded-lg border border-line px-2 py-1.5 text-sm" />
             </div>
+            <button 
+              onClick={() => {
+                updateParam('min_price', minPriceInput);
+                updateParam('max_price', maxPriceInput);
+              }}
+              className="mt-2 w-full rounded-lg bg-navy py-1.5 text-xs font-semibold text-white hover:bg-navy-light"
+            >
+              Apply Budget
+            </button>
           </FilterGroup>
 
           <FilterGroup label="Furnishing">
@@ -209,4 +206,4 @@ function Chip({ active, onClick, children }) {
       {children}
     </button>
   );
-}
+}                                                                                                                                                                                                      
